@@ -6,14 +6,13 @@ from typing import Union
 from key_store import KeyStore, get_keys
 from gekko import GEKKO
 
+from or_solver_examples import THRESHOLD
 from or_solver_examples.io_utils import run_example_from_file
 from or_solver_examples.models import Data, Solution, Trip
 from or_solver_examples.plot import plot
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-THRESHOLD = 0.99
 
 
 def get_gekko_var_value(var: GEKKO.Var) -> Union[float, int]:

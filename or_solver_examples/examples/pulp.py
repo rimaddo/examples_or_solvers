@@ -4,14 +4,13 @@ from time import time
 from key_store import KeyStore, get_keys
 from pulp import LpBinary, LpContinuous, LpMinimize, LpProblem, LpStatus, LpStatusOptimal, LpVariable, sys, value
 
+from or_solver_examples import THRESHOLD
 from or_solver_examples.io_utils import run_example_from_file
 from or_solver_examples.models import Data, Solution, Trip
 from or_solver_examples.plot import plot
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-THRESHOLD = 0.99
 
 
 def run_pulp(data: Data, show_plot: bool = True) -> Solution:
