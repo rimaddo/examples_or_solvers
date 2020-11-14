@@ -78,10 +78,11 @@ class Solution:
 
         while next_location is not None and len(ordered_locations) < (len(self.trips) + 2):
             next_location = next(
-                trip.end
-                for trip in self.trips.get(start=next_location)
+                (trip.end for trip in self.trips.get(start=next_location)),
+                None
             )
-            ordered_locations.append(next_location)
+            if next_location is not None:
+                ordered_locations.append(next_location)
             if next_location == start:
                 break
 

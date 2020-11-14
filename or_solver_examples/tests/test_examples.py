@@ -1,9 +1,10 @@
-from typing import List, Tuple
+from typing import Callable, List, Tuple
 
 import pytest
 from key_store import KeyStore, get_keys
 
-from or_solver_examples.examples.pulp_example import run_pulp
+from or_solver_examples.examples.gekko import run_gekko
+from or_solver_examples.examples.pulp import run_pulp
 from or_solver_examples.models import Data, Location
 
 LOCATION_1 = Location(name="Location One", x=1, y=1)
@@ -11,16 +12,27 @@ LOCATION_2 = Location(name="Location Two", x=2, y=1)
 LOCATION_3 = Location(name="Location Three", x=3, y=4)
 LOCATION_4 = Location(name="Location Four", x=4, y=4)
 
+START_LOCATION = LOCATION_1
+
 SINGLE_ROUTE_LOCATIONS = [
     LOCATION_1,
     LOCATION_2,
     LOCATION_3,
 ]
 SINGLE_ROUTE_ORDERED_LOCATIONS = [
-    LOCATION_1,
-    LOCATION_2,
-    LOCATION_3,
-    LOCATION_1,
+    # Two options because can go around in either direction
+    [
+        LOCATION_1,
+        LOCATION_3,
+        LOCATION_2,
+        LOCATION_1,
+    ],
+    [
+        LOCATION_1,
+        LOCATION_2,
+        LOCATION_3,
+        LOCATION_1,
+    ],
 ]
 
 """
@@ -43,33 +55,44 @@ POSSIBLE_SUB_TOUR_LOCATIONS = [
     LOCATION_4
 ]
 POSSIBLE_SUB_TOUR_ORDERED_LOCATIONS = [
-    LOCATION_1,
-    LOCATION_3,
-    LOCATION_4,
-    LOCATION_2,
-    LOCATION_1,
+    [
+        LOCATION_1,
+        LOCATION_2,
+        LOCATION_3,
+        LOCATION_4,
+        LOCATION_1,
+    ],
+    [
+        LOCATION_1,
+        LOCATION_3,
+        LOCATION_4,
+        LOCATION_2,
+        LOCATION_1,
+    ],
 ]
 
 
 @pytest.mark.parametrize(
-    "feasible, locations, expected_ordered_locations",
+    "solve_runner, locations, ordered_location_options",
     [
-        (True, SINGLE_ROUTE_LOCATIONS, SINGLE_ROUTE_ORDERED_LOCATIONS),
-        (True, POSSIBLE_SUB_TOUR_LOCATIONS, POSSIBLE_SUB_TOUR_ORDERED_LOCATIONS),
+        (run_pulp, SINGLE_ROUTE_LOCATIONS, SINGLE_ROUTE_ORDERED_LOCATIONS),
+        (run_pulp, POSSIBLE_SUB_TOUR_LOCATIONS, POSSIBLE_SUB_TOUR_ORDERED_LOCATIONS),
+        (run_gekko, SINGLE_ROUTE_LOCATIONS, SINGLE_ROUTE_ORDERED_LOCATIONS),
+        (run_gekko, POSSIBLE_SUB_TOUR_LOCATIONS, POSSIBLE_SUB_TOUR_ORDERED_LOCATIONS),
     ],
 )
-def test_run_pulp(feasible: bool, locations: List[Location], expected_ordered_locations: List[Location]) -> None:
+def test_run_solve(solve_runner: Callable, locations: List[Location], ordered_location_options: List[Location]) -> None:
     data = Data(
         locations=KeyStore(
             keys=get_keys(Location),
             objects=locations,
-        )
+        ),
+        start_location_name=START_LOCATION.name,
     )
-    solution = run_pulp(data=data, show_plot=False)
+    solution = solve_runner(data=data, show_plot=False)
 
-    assert solution.feasible == feasible
+    assert solution.feasible is True
 
     if solution.feasible:
-        ordered_locations = solution.ordered_locations(start=expected_ordered_locations[0])
-        for n, expected_location in enumerate(expected_ordered_locations):
-            assert expected_location == ordered_locations[n], f"expected location {n + 1} to be {expected_location} got {ordered_locations[n]}"
+        ordered_locations = solution.ordered_locations(start=START_LOCATION)
+        assert ordered_locations in ordered_location_options
